@@ -16,7 +16,7 @@ class CustomAppBarWidget extends StatelessWidget {
     return AppBar(
       backgroundColor: Colors.white,
       leading: IconButton(
-        onPressed: () {},
+        onPressed: onPressed,
         icon: const Icon(
           Icons.arrow_back,
         ),

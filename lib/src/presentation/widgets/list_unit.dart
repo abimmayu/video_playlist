@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_play/core/utils/constant.dart';
-import 'package:video_play/src/presentation/bloc/video_player_bloc/video_player_bloc.dart';
 
 class ListUnitWidget extends StatefulWidget {
   ListUnitWidget({
@@ -84,11 +82,6 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
               children: [
                 Html(
                   data: widget.title,
-                  style: {
-                    "div": Style(
-                      textAlign: TextAlign.left,
-                    ),
-                  },
                 ),
                 Row(
                   children: [
