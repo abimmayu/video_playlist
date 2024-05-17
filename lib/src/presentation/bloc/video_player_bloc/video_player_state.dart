@@ -16,7 +16,23 @@ class VideoInitializedState extends VideoPlayerState {
   List<Object> get props => [controller];
 }
 
-class VideoDownloading extends VideoPlayerState {}
+class VideoSelection extends VideoPlayerState {
+  final int index;
+
+  VideoSelection(this.index);
+
+  @override
+  List<Object> get props => [index];
+}
+
+class VideoDownloading extends VideoPlayerState {
+  final double progress;
+
+  VideoDownloading(this.progress);
+
+  @override
+  List<Object> get props => [progress];
+}
 
 class VideoDownloadError extends VideoPlayerState {
   final String error;
@@ -41,3 +57,15 @@ class VideoDownloaded extends VideoPlayerState {
 }
 
 class VideoNotDownloaded extends VideoPlayerState {}
+
+class VideoDownloadProgress extends VideoPlayerState {}
+
+class VideoDownloadSuccess extends VideoPlayerState {
+  final bool isDownloaded;
+  final String fileLocation;
+
+  VideoDownloadSuccess(this.isDownloaded, this.fileLocation);
+
+  @override
+  List<Object> get props => [isDownloaded, fileLocation];
+}

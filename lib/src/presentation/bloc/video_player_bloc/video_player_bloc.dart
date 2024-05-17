@@ -18,7 +18,9 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
   final CheckDownloadStatusUseCase checkDownloadStatusUseCase;
   int selected = 1;
   bool showControls = true;
-  bool downloadStatus = true;
+  bool downloadStatus = false;
+  bool isWatched = false;
+  bool isDownloading = false;
 
   VideoPlayerBloc(
     this.downloadVideoUseCase,
@@ -28,35 +30,46 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
         ) {
     on<VideoPlayerLoad>(
       (event, emit) async {
-        return await initializeVideo(
+        isDownloading = true;
+        emit(
+          VideoUninitialized(),
+        );
+        await initializeVideo(
           event.url,
           emit,
         );
+        isDownloading = false;
       },
     );
     on<VideoSelected>(
       (event, emit) async {
-        return changeVideo(
+        isDownloading = true;
+        await changeVideo(
           event.urlNew,
           emit,
           event.index,
         );
+        isDownloading = false;
       },
     );
     on<DownloadVideoEvent>(
       (event, emit) async {
-        return await downloadVideo(
+        isDownloading = true;
+        await downloadVideo(
           event.url,
           emit,
         );
+        isDownloading = false;
       },
     );
     on<CheckVideoDownloadStatus>(
       (event, emit) async {
-        return await checkDownloadedStatus(
+        isDownloading = true;
+        await checkDownloadedStatus(
           event.videoUrl,
           emit,
         );
+        isDownloading = false;
       },
     );
     on<GetVideoPlayerInternal>(
@@ -83,24 +96,31 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     );
   }
 
-  void changeVideo(
+  Future<void> changeVideo(
     String newUrl,
     Emitter<VideoPlayerState> emit,
     int index,
-  ) {
+  ) async {
     controller.dispose();
 
     emit(
       VideoUninitialized(),
     );
 
+    selected = index;
     controller = VideoPlayerController.networkUrl(
       Uri.parse(newUrl),
     )..initialize();
     showControls = true;
 
     emit(
-      VideoInitializedState(controller),
+      VideoSelection(index),
+    );
+
+    emit(
+      VideoInitializedState(
+        controller,
+      ),
     );
   }
 
@@ -117,13 +137,19 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     final filePath = await getApplicationDocumentsDirectory();
 
     final fileName = url.split('/').last;
-    log(fileName);
     final path = '${filePath.path}/videos/$fileName';
 
     controller = VideoPlayerController.file(
       File(path),
     )..initialize();
-    controller.setLooping(true);
+    // controller.addListener(
+    //   () {
+    //     if (controller.value.position == controller.value.duration) {
+    //       showControls = true;
+    //       isWatched = true;
+    //     }
+    //   },
+    // );
     showControls = true;
 
     emit(
@@ -135,11 +161,12 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     String url,
     Emitter<VideoPlayerState> emit,
   ) async {
-    controller.dispose();
-
     emit(
       VideoUninitialized(),
     );
+    final filePath = await getApplicationCacheDirectory();
+    final fileName = url.split('/').last;
+    final fileLocation = '${filePath.path}/videos/$fileName';
 
     final result = await checkDownloadStatusUseCase.checkDownloadStatus(url);
     result.fold(
@@ -148,14 +175,20 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
       ),
       (r) async {
         if (!r) {
+          downloadStatus = r;
+          emit(
+            VideoDownloadSuccess(r, fileLocation),
+          );
           add(
             DownloadVideoEvent(url),
           );
-          downloadStatus = r;
           log(
             "Download Status: $downloadStatus",
           );
         } else {
+          emit(
+            VideoDownloadSuccess(r, fileLocation),
+          );
           add(
             GetVideoPlayerInternal(url),
           );
@@ -163,8 +196,6 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
           log(
             "Download Status: $downloadStatus",
           );
-
-          return null;
         }
       },
     );
@@ -175,7 +206,9 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     Emitter<VideoPlayerState> emit,
   ) async {
     emit(
-      VideoDownloading(),
+      VideoDownloading(
+        0.0,
+      ),
     );
     controller.dispose();
 
@@ -192,6 +225,9 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
         )..initialize();
         controller.setLooping(true);
         showControls = true;
+        emit(
+          VideoDownloading(1),
+        );
 
         emit(
           VideoDownloaded(r, controller),

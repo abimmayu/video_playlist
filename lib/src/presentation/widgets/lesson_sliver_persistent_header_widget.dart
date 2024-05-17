@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:video_play/core/utils/constant.dart';
 
 class LessonHeader extends SliverPersistentHeaderDelegate {
   @override

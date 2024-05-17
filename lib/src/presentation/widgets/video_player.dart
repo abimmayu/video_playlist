@@ -95,8 +95,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             },
           );
         } else {
-          return const Center(
-            child: CircularProgressIndicator(),
+          return const AspectRatio(
+            aspectRatio: 1.77777777,
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
           );
         }
       },

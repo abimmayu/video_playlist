@@ -15,6 +15,7 @@ void main() {
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(kToolbarHeight),
                 child: CustomAppBarWidget(
+                  isDownloading: false,
                   title: title,
                   onPressed: () {},
                 ),
@@ -37,6 +38,7 @@ void main() {
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: CustomAppBarWidget(
+                isDownloading: false,
                 title: 'Test Title',
                 onPressed: () {
                   onPressedCalled = false;

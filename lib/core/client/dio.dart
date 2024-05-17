@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/web.dart';
 
@@ -21,6 +22,9 @@ Future<Response> downloadIt(
   final response = await Dio().download(
     url,
     savePath,
+    options: Options(
+      responseType: ResponseType.bytes,
+    ),
   );
   Logger().d(response.data);
   return response;

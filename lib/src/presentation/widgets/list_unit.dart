@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_play/core/utils/constant.dart';
+import 'package:video_play/src/presentation/bloc/video_player_bloc/video_player_bloc.dart';
 
 class ListUnitWidget extends StatefulWidget {
   ListUnitWidget({
@@ -28,20 +30,9 @@ class ListUnitWidget extends StatefulWidget {
 }
 
 class _ListUnitWidgetState extends State<ListUnitWidget> {
-  bool isDownloaded = false;
-
   @override
   void initState() {
-    downloadStatusChange();
     super.initState();
-  }
-
-  void downloadStatusChange() {
-    setState(
-      () {
-        isDownloaded = widget.isDownloaded;
-      },
-    );
   }
 
   @override
@@ -56,8 +47,7 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
   Widget newWidget(int duration) {
     return Container(
       decoration: BoxDecoration(
-        color: widget.isSelected ? Colors.blue[100] : Colors.white,
-        // color: Colors.white,
+        color: widget.isSelected ? Colors.lightBlue[50] : Colors.white,
       ),
       padding: EdgeInsets.symmetric(
         horizontal: ScreenUtil().setWidth(20),
@@ -125,40 +115,49 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
           widget.offlineDownloadLink != null
               ? InkWell(
                   onTap: widget.onTapDownload,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    height: ScreenUtil().setHeight(30),
-                    decoration: BoxDecoration(
-                      color: isDownloaded ? Colors.white : Colors.blue,
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: Colors.grey[200]!,
+                  child: BlocListener<VideoPlayerBloc, VideoPlayerState>(
+                    listener: (context, state) {
+                      if (state is VideoDownloadSuccess) {}
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      height: ScreenUtil().setHeight(30),
+                      decoration: BoxDecoration(
+                        color: widget.isDownloaded ? Colors.white : Colors.blue,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: Colors.grey[200]!,
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isDownloaded ? "Tersimpan" : "Tonton Offline",
-                          style: isDownloaded
-                              ? AppConstant().normalTextStyle.copyWith(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                  )
-                              : AppConstant().thinTextStyle.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                  ),
-                        ),
-                        SizedBox(
-                          width: ScreenUtil().setWidth(3),
-                        ),
-                        Icon(
-                          Icons.check_circle_outline,
-                          color: Colors.blue,
-                          size: ScreenUtil().setHeight(12),
-                        )
-                      ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            widget.isDownloaded
+                                ? "Tersimpan"
+                                : "Tonton Offline",
+                            style: widget.isDownloaded
+                                ? AppConstant().normalTextStyle.copyWith(
+                                      color: Colors.black,
+                                      fontSize: 10,
+                                    )
+                                : AppConstant().thinTextStyle.copyWith(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                          ),
+                          SizedBox(
+                            width: ScreenUtil().setWidth(3),
+                          ),
+                          widget.isDownloaded
+                              ? Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.blue,
+                                  size: ScreenUtil().setHeight(12),
+                                )
+                              : const SizedBox.shrink()
+                        ],
+                      ),
                     ),
                   ),
                 )

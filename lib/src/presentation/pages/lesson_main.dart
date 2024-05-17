@@ -1,12 +1,8 @@
 import 'dart:developer';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_play/core/utils/constant.dart';
 import 'package:video_play/src/domain/entities/curriculum.dart';
 import 'package:video_play/src/presentation/bloc/lesson_bloc/lesson_bloc.dart';
@@ -40,33 +36,53 @@ class _MainLessonViewState extends State<MainLessonView> {
 
   late int selectedIndex;
   late String urlDownload;
-  // late bool isSelected = false;
+  late bool isDownloaded;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: CustomAppBarWidget(
-          title: "Akutansi Dasar dan Keuangan",
-          onPressed: () {
-            context.read<VideoPlayerBloc>().add(
-                  CheckVideoDownloadStatus(
-                    urlDownload,
-                  ),
-                );
+        child: BlocBuilder<VideoPlayerBloc, VideoPlayerState>(
+          builder: (context, state) {
+            if (state is VideoDownloading) {
+              return CustomAppBarWidget(
+                isDownloading: false,
+                title: "Akutansi Dasar dan Keuangan",
+                onPressed: () {
+                  context.read<VideoPlayerBloc>().add(
+                        CheckVideoDownloadStatus(
+                          urlDownload,
+                        ),
+                      );
+                },
+                progress: state.progress,
+              );
+            } else {
+              return CustomAppBarWidget(
+                isDownloading: false,
+                title: "Akutansi Dasar dan Keuangan",
+                onPressed: () {
+                  context.read<VideoPlayerBloc>().add(
+                        CheckVideoDownloadStatus(
+                          urlDownload,
+                        ),
+                      );
+                },
+              );
+            }
           },
         ),
       ),
       body: BlocBuilder<LessonBloc, LessonState>(
         builder: (context, state) {
           if (state is LessonLoading) {
+            selectedIndex = 1;
             return const Center(
               child: CircularProgressIndicator(),
             );
           } else if (state is LessonLoaded) {
             List<Curriculum> listCurriculum = state.curriculum;
-            selectedIndex = context.read<VideoPlayerBloc>().selected;
             urlDownload = listCurriculum[selectedIndex].offlineVideoLink!;
 
             context.read<VideoPlayerBloc>().add(
@@ -76,18 +92,8 @@ class _MainLessonViewState extends State<MainLessonView> {
                 );
             return CustomScrollView(
               slivers: [
-                BlocBuilder<VideoPlayerBloc, VideoPlayerState>(
-                  builder: (context, state) {
-                    if (state is VideoUninitialized) {
-                      return const SliverToBoxAdapter(
-                          child: CircularProgressIndicator());
-                    } else if (state is VideoInitializedState) {
-                      return const SliverToBoxAdapter(
-                        child: VideoPlayerWidget(),
-                      );
-                    }
-                    return Container();
-                  },
+                const SliverToBoxAdapter(
+                  child: VideoPlayerWidget(),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -97,20 +103,19 @@ class _MainLessonViewState extends State<MainLessonView> {
                     ),
                     child: Html(
                       data: listCurriculum[selectedIndex].title,
-                      // style: AppConstant().normalTextStyle,
                     ),
                   ),
                 ),
                 SliverPersistentHeader(
-                  floating: true,
                   pinned: true,
                   delegate: LessonHeader(),
                 ),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      bool isSelected =
-                          index == context.read<VideoPlayerBloc>().selected;
+                      bool isSelected = listCurriculum[selectedIndex] ==
+                          listCurriculum[index];
+                      isDownloaded = false;
                       if (listCurriculum[index].type ==
                           AppConstant.sectionType) {
                         return ListSectionWidget(
@@ -120,8 +125,13 @@ class _MainLessonViewState extends State<MainLessonView> {
                       } else {
                         return BlocListener<VideoPlayerBloc, VideoPlayerState>(
                           listener: (context, state) {
-                            selectedIndex =
-                                context.read<VideoPlayerBloc>().selected;
+                            if (state is VideoSelection) {
+                              setState(
+                                () {
+                                  selectedIndex = state.index;
+                                },
+                              );
+                            }
                           },
                           child: ListUnitWidget(
                             isSelected: isSelected,
@@ -148,10 +158,14 @@ class _MainLessonViewState extends State<MainLessonView> {
                                         listCurriculum[index].offlineVideoLink!,
                                       ),
                                     );
+                                setState(
+                                  () {
+                                    selectedIndex = index;
+                                  },
+                                );
                               }
                             },
-                            isDownloaded:
-                                context.read<VideoPlayerBloc>().downloadStatus,
+                            isDownloaded: isDownloaded,
                             offlineDownloadLink:
                                 listCurriculum[index].offlineVideoLink,
                           ),

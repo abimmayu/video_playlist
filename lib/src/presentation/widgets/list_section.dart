@@ -19,7 +19,7 @@ class ListSectionWidget extends StatelessWidget {
         ConvertDurationUseCase().execute(duration);
     return Container(
       margin: EdgeInsets.symmetric(
-        vertical: ScreenUtil().setHeight(10),
+        vertical: 5.h,
       ),
       padding: EdgeInsets.symmetric(
         horizontal: ScreenUtil().setWidth(20),
