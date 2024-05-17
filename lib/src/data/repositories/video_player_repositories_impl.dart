@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:video_play/core/error/failure.dart';
 import 'package:video_play/core/utils/video_download.dart';
 import 'package:video_play/src/data/data_source/lesson_data_source.dart';
-import 'package:video_play/src/domain/entities/curriculum_models.dart';
+import 'package:video_play/src/domain/entities/curriculum.dart';
 import 'package:video_play/src/domain/repositories/video_player_repositories.dart';
 
 class LessonRepositoriesImpl implements LessonRepositories {

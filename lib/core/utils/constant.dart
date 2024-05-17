@@ -27,7 +27,7 @@ class AppConstant {
     fontWeight: FontWeight.normal,
   );
 
-//Course Data Type
+  //Course Data Type
   static const String sectionType = "section";
   static const String unitType = "unit";
 }

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:video_play/src/domain/entities/curriculum_models.dart';
+import 'package:video_play/src/domain/entities/curriculum.dart';
 import 'package:video_play/src/domain/usecases/get_lesson.dart';
 import 'package:video_play/src/presentation/bloc/video_player_bloc/video_player_bloc.dart';
 
@@ -40,7 +40,9 @@ class LessonBloc extends Bloc<LessonEvent, LessonState> {
       ),
       (r) {
         emit(
-          LessonLoaded(r),
+          LessonLoaded(
+            r,
+          ),
         );
         videoBloc.add(
           VideoPlayerLoad(r[1].onlineVideoLink!),

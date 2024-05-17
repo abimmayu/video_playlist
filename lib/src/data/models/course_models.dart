@@ -1,4 +1,4 @@
-import 'package:video_play/src/domain/entities/curriculum_models.dart';
+import 'package:video_play/src/domain/entities/curriculum.dart';
 
 class Course {
   String courseName;

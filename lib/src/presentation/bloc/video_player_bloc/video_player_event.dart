@@ -7,6 +7,10 @@ abstract class VideoPlayerEvent extends Equatable {
 
 class VideoPlayerInitialized extends VideoPlayerEvent {}
 
+class VideoPlayerPlay extends VideoPlayerEvent {}
+
+class VideoPlayerPause extends VideoPlayerEvent {}
+
 class VideoPlayerLoad extends VideoPlayerEvent {
   final String url;
 

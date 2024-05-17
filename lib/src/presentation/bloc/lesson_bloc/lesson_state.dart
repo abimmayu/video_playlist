@@ -19,6 +19,7 @@ class LessonError extends LessonState {
 
 class LessonLoaded extends LessonState {
   final List<Curriculum> curriculum;
+
   LessonLoaded(
     this.curriculum,
   );

@@ -10,12 +10,14 @@ void main() {
         'renders data corectly',
         (widgetTester) async {
           const String title = 'Test Title';
+          const int duration = 60;
 
           await widgetTester.pumpWidget(
             const MaterialApp(
               home: Scaffold(
                 body: ListSectionWidget(
                   title: title,
+                  duration: duration,
                 ),
               ),
             ),

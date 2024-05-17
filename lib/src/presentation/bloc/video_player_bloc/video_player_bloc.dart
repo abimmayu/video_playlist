@@ -36,7 +36,7 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     );
     on<VideoSelected>(
       (event, emit) async {
-        return await changeVideo(
+        return changeVideo(
           event.urlNew,
           emit,
           event.index,
@@ -83,22 +83,20 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
     );
   }
 
-  Future<void> changeVideo(
+  void changeVideo(
     String newUrl,
     Emitter<VideoPlayerState> emit,
     int index,
-  ) async {
+  ) {
     controller.dispose();
 
     emit(
       VideoUninitialized(),
     );
 
-    selected = index;
     controller = VideoPlayerController.networkUrl(
       Uri.parse(newUrl),
     )..initialize();
-    controller.setLooping(true);
     showControls = true;
 
     emit(
@@ -116,10 +114,11 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
       VideoUninitialized(),
     );
 
+    final filePath = await getApplicationDocumentsDirectory();
+
     final fileName = url.split('/').last;
     log(fileName);
-    final path =
-        '/data/user/0/com.example.video_play/app_flutter/videos/$fileName';
+    final path = '${filePath.path}/videos/$fileName';
 
     controller = VideoPlayerController.file(
       File(path),
