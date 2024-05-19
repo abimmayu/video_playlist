@@ -33,8 +33,6 @@ class _PlayPauseOverlayState extends State<PlayPauseOverlay> {
         if (widget.showControl) {
           if (state is VideoInitializedState) {
             return button(state.controller);
-          } else if (state is VideoDownloaded) {
-            return button(state.videoPlayerController);
           } else {
             return Container();
           }

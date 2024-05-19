@@ -44,9 +44,6 @@ class LessonBloc extends Bloc<LessonEvent, LessonState> {
             r,
           ),
         );
-        videoBloc.add(
-          VideoPlayerLoad(r[1].onlineVideoLink!),
-        );
       },
     );
   }

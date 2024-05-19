@@ -5,59 +5,49 @@ abstract class VideoPlayerEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class VideoPlayerInitialized extends VideoPlayerEvent {}
-
 class VideoPlayerPlay extends VideoPlayerEvent {}
 
 class VideoPlayerPause extends VideoPlayerEvent {}
 
-class VideoPlayerLoad extends VideoPlayerEvent {
-  final String url;
-
-  VideoPlayerLoad(
-    this.url,
-  );
-
-  @override
-  List<Object> get props => [url];
-}
-
-class VideoSelected extends VideoPlayerEvent {
-  final String urlNew;
+class VideoIntialize extends VideoPlayerEvent {
+  final String onlineUrl;
+  final String offlineUrl;
   final int index;
 
-  VideoSelected(
-    this.urlNew,
+  VideoIntialize(
+    this.onlineUrl,
+    this.offlineUrl,
     this.index,
   );
 
   @override
-  List<Object> get props => [urlNew, index];
+  List<Object> get props => [onlineUrl, offlineUrl, index];
 }
 
-class DownloadVideoEvent extends VideoPlayerEvent {
+class VideoDownload extends VideoPlayerEvent {
   final String url;
 
-  DownloadVideoEvent(this.url);
+  VideoDownload(this.url);
 
   @override
   List<Object> get props => [url];
 }
 
-class CheckVideoDownloadStatus extends VideoPlayerEvent {
-  final String videoUrl;
+class DeleteVideo extends VideoPlayerEvent {
+  final String onlineUrl;
+  final String offlineUrl;
 
-  CheckVideoDownloadStatus(this.videoUrl);
+  DeleteVideo(this.onlineUrl, this.offlineUrl);
 
   @override
-  List<Object> get props => [videoUrl];
+  List<Object> get props => [onlineUrl, offlineUrl];
 }
 
-class GetVideoPlayerInternal extends VideoPlayerEvent {
-  final String videoUrl;
+class CheckExistVideoFile extends VideoPlayerEvent {
+  final String url;
 
-  GetVideoPlayerInternal(this.videoUrl);
+  CheckExistVideoFile(this.url);
 
   @override
-  List<Object> get props => [videoUrl];
+  List<Object> get props => [];
 }

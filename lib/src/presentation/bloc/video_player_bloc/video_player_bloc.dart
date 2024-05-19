@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_play/src/domain/usecases/check_download_status.dart';
+import 'package:video_play/src/domain/usecases/delete_video.dart';
 import 'package:video_play/src/domain/usecases/download_video.dart';
 import 'package:video_player/video_player.dart';
 
@@ -16,6 +17,8 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
   late VideoPlayerController controller;
   final DownloadVideoUseCase downloadVideoUseCase;
   final CheckDownloadStatusUseCase checkDownloadStatusUseCase;
+  final DeleteVideoUseCases deleteVideoUseCases;
+
   int selected = 1;
   bool showControls = true;
   bool downloadStatus = false;
@@ -25,176 +28,124 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
   VideoPlayerBloc(
     this.downloadVideoUseCase,
     this.checkDownloadStatusUseCase,
+    this.deleteVideoUseCases,
   ) : super(
           VideoUninitialized(),
         ) {
-    on<VideoPlayerLoad>(
+    on<VideoIntialize>(
       (event, emit) async {
-        isDownloading = true;
-        emit(
-          VideoUninitialized(),
-        );
         await initializeVideo(
-          event.url,
+          event.onlineUrl,
+          event.offlineUrl,
+          selected,
           emit,
         );
-        isDownloading = false;
       },
     );
-    on<VideoSelected>(
+    on<VideoDownload>(
       (event, emit) async {
-        isDownloading = true;
-        await changeVideo(
-          event.urlNew,
-          emit,
-          event.index,
-        );
-        isDownloading = false;
-      },
-    );
-    on<DownloadVideoEvent>(
-      (event, emit) async {
-        isDownloading = true;
         await downloadVideo(
           event.url,
           emit,
         );
-        isDownloading = false;
       },
     );
-    on<CheckVideoDownloadStatus>(
-      (event, emit) async {
-        isDownloading = true;
-        await checkDownloadedStatus(
-          event.videoUrl,
-          emit,
-        );
-        isDownloading = false;
-      },
-    );
-    on<GetVideoPlayerInternal>(
-      (event, emit) async {
-        return await changeVideoInternal(
-          event.videoUrl,
-          emit,
+    on<VideoPlayerPlay>(
+      (event, emit) {
+        controller.play();
+        emit(
+          VideoInitializedState(controller, true, selected),
         );
       },
     );
+    on<VideoPlayerPause>(
+      (event, emit) {
+        controller.pause();
+        emit(
+          VideoInitializedState(controller, false, selected),
+        );
+      },
+    );
+    on<DeleteVideo>(
+      (event, emit) async {
+        controller.dispose();
+        await deleteVideo(
+          event.onlineUrl,
+          event.offlineUrl,
+          emit,
+        );
+      },
+    );
+    // on<VideoPlayerLoad>(
+    //   (event, emit) async {
+    //     emit(
+    //       VideoUninitialized(),
+    //     );
+    //     await initializeVideo(
+    //       event.url,
+    //       emit,
+    //     );
+    //   },
+    // );
+    // on<VideoSelected>(
+    //   (event, emit) async {
+    //     await changeVideo(
+    //       event.urlNew,
+    //       emit,
+    //     );
+    //   },
+    // );
+
+    // on<CheckExistVideoFile>(
+    //   (event, emit) async {
+    //     await checkDownloadedStatus(
+    //       event.url,
+    //       emit,
+    //     );
+    //   },
+    // );
   }
 
   Future<void> initializeVideo(
-    String url,
-    Emitter<VideoPlayerState> emit,
-  ) async {
-    controller = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-    )..initialize();
-    controller.setLooping(true);
-
-    emit(
-      VideoInitializedState(controller),
-    );
-  }
-
-  Future<void> changeVideo(
-    String newUrl,
-    Emitter<VideoPlayerState> emit,
+    String onlineUrl,
+    String offlineUrl,
     int index,
-  ) async {
-    controller.dispose();
-
-    emit(
-      VideoUninitialized(),
-    );
-
-    selected = index;
-    controller = VideoPlayerController.networkUrl(
-      Uri.parse(newUrl),
-    )..initialize();
-    showControls = true;
-
-    emit(
-      VideoSelection(index),
-    );
-
-    emit(
-      VideoInitializedState(
-        controller,
-      ),
-    );
-  }
-
-  Future<void> changeVideoInternal(
-    String url,
     Emitter<VideoPlayerState> emit,
   ) async {
-    controller.dispose();
-
     emit(
       VideoUninitialized(),
     );
+
+    // log("controller saat ini: ${controller.value.isInitialized}");
+    // if (controller.value.isInitialized) {
+    //   controller.dispose();
+    // }
 
     final filePath = await getApplicationDocumentsDirectory();
-
-    final fileName = url.split('/').last;
-    final path = '${filePath.path}/videos/$fileName';
-
-    controller = VideoPlayerController.file(
-      File(path),
-    )..initialize();
-    // controller.addListener(
-    //   () {
-    //     if (controller.value.position == controller.value.duration) {
-    //       showControls = true;
-    //       isWatched = true;
-    //     }
-    //   },
-    // );
-    showControls = true;
-
-    emit(
-      VideoInitializedState(controller),
-    );
-  }
-
-  Future<void> checkDownloadedStatus(
-    String url,
-    Emitter<VideoPlayerState> emit,
-  ) async {
-    emit(
-      VideoUninitialized(),
-    );
-    final filePath = await getApplicationCacheDirectory();
-    final fileName = url.split('/').last;
+    final fileName = offlineUrl.split('/').last;
     final fileLocation = '${filePath.path}/videos/$fileName';
 
-    final result = await checkDownloadStatusUseCase.checkDownloadStatus(url);
-    result.fold(
+    final isVideoExist =
+        await checkDownloadStatusUseCase.checkDownloadStatus(offlineUrl);
+
+    isVideoExist.fold(
       (l) => emit(
         VideoDownloadError(l.message!),
       ),
       (r) async {
         if (!r) {
-          downloadStatus = r;
-          emit(
-            VideoDownloadSuccess(r, fileLocation),
-          );
-          add(
-            DownloadVideoEvent(url),
-          );
-          log(
-            "Download Status: $downloadStatus",
+          controller = VideoPlayerController.networkUrl(
+            Uri.parse(onlineUrl),
+          )..initialize();
+          return emit(
+            VideoInitializedState(controller, false, selected),
           );
         } else {
-          emit(
-            VideoDownloadSuccess(r, fileLocation),
-          );
-          add(
-            GetVideoPlayerInternal(url),
-          );
-          downloadStatus = r;
-          log(
-            "Download Status: $downloadStatus",
+          controller = VideoPlayerController.file(
+            File(fileLocation),
+          )..initialize();
+          return emit(
+            VideoInitializedState(controller, false, selected),
           );
         }
       },
@@ -202,37 +153,96 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerState> {
   }
 
   Future<void> downloadVideo(
-    String url,
+    String offlineUrl,
     Emitter<VideoPlayerState> emit,
   ) async {
-    emit(
-      VideoDownloading(
-        0.0,
-      ),
-    );
-    controller.dispose();
+    controller.pause();
 
-    final result = await downloadVideoUseCase.download(url);
-    result.fold(
+    final isVideoExist =
+        await checkDownloadStatusUseCase.checkDownloadStatus(offlineUrl);
+
+    isVideoExist.fold(
       (l) => emit(
-        VideoDownloadError(
-          l.message!,
-        ),
+        VideoDownloadError(l.message!),
+      ),
+      (r) async {
+        if (!r) {
+          emit(
+            VideoDownloadProgress(),
+          );
+          final result = await downloadVideoUseCase.download(
+            offlineUrl,
+          );
+
+          result.fold(
+            (l) => emit(
+              VideoDownloadError(l.message!),
+            ),
+            (r) async {
+              add(
+                VideoIntialize('onlineUrl', offlineUrl, 0),
+              );
+            },
+          );
+        } else {
+          log("disini yang berjalan");
+        }
+      },
+    );
+  }
+
+  Future<void> deleteVideo(
+    String onlineUrl,
+    String offlineUrl,
+    Emitter<VideoPlayerState> emit,
+  ) async {
+    controller.pause();
+
+    final delete = await deleteVideoUseCases.execute(offlineUrl);
+    delete.fold(
+      (l) => emit(
+        VideoDownloadError(l.message!),
       ),
       (r) {
-        controller = VideoPlayerController.file(
-          File(r),
-        )..initialize();
-        controller.setLooping(true);
-        showControls = true;
-        emit(
-          VideoDownloading(1),
-        );
-
-        emit(
-          VideoDownloaded(r, controller),
+        log("Berhasil menghapus data!");
+        controller.dispose();
+        add(
+          VideoIntialize(onlineUrl, offlineUrl, 0),
         );
       },
     );
   }
+
+  // Future<void> checkDownloadedStatus(
+  //   String url,
+  //   Emitter<VideoPlayerState> emit,
+  // ) async {
+  //   emit(
+  //     VideoUninitialized(),
+  //   );
+
+  //   final filePath = await getApplicationDocumentsDirectory();
+  //   final fileName = url.split('/').last;
+  //   final fileLocation = '${filePath.path}/videos/$fileName';
+
+  //   final result = await checkDownloadStatusUseCase.checkDownloadStatus(url);
+  //   result.fold(
+  //     (l) => emit(
+  //       VideoDownloadError(l.message!),
+  //     ),
+  //     (r) async {
+  //       if (!r) {
+  //         downloadStatus = r;
+  //         log(
+  //           "Download Status: $downloadStatus",
+  //         );
+  //       } else {
+  //         downloadStatus = r;
+  //         log(
+  //           "Download Status: $downloadStatus",
+  //         );
+  //       }
+  //     },
+  //   );
+  // }
 }

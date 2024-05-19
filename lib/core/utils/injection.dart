@@ -3,6 +3,7 @@ import 'package:video_play/src/data/data_source/lesson_data_source.dart';
 import 'package:video_play/src/data/repositories/video_player_repositories_impl.dart';
 import 'package:video_play/src/domain/repositories/video_player_repositories.dart';
 import 'package:video_play/src/domain/usecases/check_download_status.dart';
+import 'package:video_play/src/domain/usecases/delete_video.dart';
 import 'package:video_play/src/domain/usecases/download_video.dart';
 import 'package:video_play/src/domain/usecases/get_lesson.dart';
 import 'package:video_play/src/presentation/bloc/lesson_bloc/lesson_bloc.dart';
@@ -19,7 +20,11 @@ void init() {
     ),
   );
   locator.registerFactory(
-    () => VideoPlayerBloc(locator(), locator()),
+    () => VideoPlayerBloc(
+      locator(),
+      locator(),
+      locator(),
+    ),
   );
 
   //usecases
@@ -37,6 +42,9 @@ void init() {
     () => CheckDownloadStatusUseCase(
       locator(),
     ),
+  );
+  locator.registerLazySingleton(
+    () => DeleteVideoUseCases(),
   );
 
   //repository

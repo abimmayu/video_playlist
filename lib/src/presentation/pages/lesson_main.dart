@@ -1,8 +1,10 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:video_play/core/utils/constant.dart';
 import 'package:video_play/src/domain/entities/curriculum.dart';
 import 'package:video_play/src/presentation/bloc/lesson_bloc/lesson_bloc.dart';
@@ -34,9 +36,9 @@ class _MainLessonViewState extends State<MainLessonView> {
     );
   }
 
-  late int selectedIndex;
+  int selectedIndex = 1;
   late String urlDownload;
-  late bool isDownloaded;
+  bool isDownload = false;
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +51,7 @@ class _MainLessonViewState extends State<MainLessonView> {
               return CustomAppBarWidget(
                 isDownloading: false,
                 title: "Akutansi Dasar dan Keuangan",
-                onPressed: () {
-                  context.read<VideoPlayerBloc>().add(
-                        CheckVideoDownloadStatus(
-                          urlDownload,
-                        ),
-                      );
-                },
+                onPressed: () {},
                 progress: state.progress,
               );
             } else {
@@ -64,9 +60,7 @@ class _MainLessonViewState extends State<MainLessonView> {
                 title: "Akutansi Dasar dan Keuangan",
                 onPressed: () {
                   context.read<VideoPlayerBloc>().add(
-                        CheckVideoDownloadStatus(
-                          urlDownload,
-                        ),
+                        VideoDownload(urlDownload),
                       );
                 },
               );
@@ -86,10 +80,13 @@ class _MainLessonViewState extends State<MainLessonView> {
             urlDownload = listCurriculum[selectedIndex].offlineVideoLink!;
 
             context.read<VideoPlayerBloc>().add(
-                  VideoPlayerLoad(
+                  VideoIntialize(
                     listCurriculum[selectedIndex].onlineVideoLink!,
+                    listCurriculum[selectedIndex].offlineVideoLink!,
+                    selectedIndex,
                   ),
                 );
+
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(
@@ -115,7 +112,25 @@ class _MainLessonViewState extends State<MainLessonView> {
                     (context, index) {
                       bool isSelected = listCurriculum[selectedIndex] ==
                           listCurriculum[index];
-                      isDownloaded = false;
+                      if (listCurriculum[index].offlineVideoLink != null) {
+                        checkVideoFile() async {
+                          final internalPath =
+                              await getApplicationDocumentsDirectory();
+                          final fileName = listCurriculum[index]
+                              .offlineVideoLink!
+                              .split('/')
+                              .last;
+                          final filePath =
+                              '${internalPath.path}/videos/$fileName';
+
+                          final file = File(filePath);
+
+                          setState(() {
+                            isDownload = file.existsSync();
+                          });
+                        }
+                      }
+
                       if (listCurriculum[index].type ==
                           AppConstant.sectionType) {
                         return ListSectionWidget(
@@ -125,12 +140,16 @@ class _MainLessonViewState extends State<MainLessonView> {
                       } else {
                         return BlocListener<VideoPlayerBloc, VideoPlayerState>(
                           listener: (context, state) {
-                            if (state is VideoSelection) {
-                              setState(
-                                () {
-                                  selectedIndex = state.index;
-                                },
-                              );
+                            if (state is VideoDownloadSuccess) {
+                              if (state.isDownloaded) {
+                                context.read<VideoPlayerBloc>().add(
+                                      VideoIntialize(
+                                        listCurriculum[index].onlineVideoLink!,
+                                        listCurriculum[index].offlineVideoLink!,
+                                        index,
+                                      ),
+                                    );
+                              }
                             }
                           },
                           child: ListUnitWidget(
@@ -140,32 +159,61 @@ class _MainLessonViewState extends State<MainLessonView> {
                             onTap: () {
                               urlDownload =
                                   listCurriculum[index].offlineVideoLink!;
+                              context
+                                  .read<VideoPlayerBloc>()
+                                  .controller
+                                  .dispose();
                               context.read<VideoPlayerBloc>().add(
-                                    VideoSelected(
+                                    VideoIntialize(
                                       listCurriculum[index].onlineVideoLink!,
+                                      listCurriculum[index].offlineVideoLink!,
                                       index,
                                     ),
                                   );
-                              log("Ini selected index: $selectedIndex");
-                              log("Ini index: $index");
-                              log("Ini selected: ${context.read<VideoPlayerBloc>().selected}");
+                              setState(() {
+                                selectedIndex = index;
+                              });
                             },
                             onTapDownload: () {
                               if (listCurriculum[index].offlineVideoLink !=
                                   null) {
                                 context.read<VideoPlayerBloc>().add(
-                                      CheckVideoDownloadStatus(
+                                      VideoDownload(listCurriculum[index]
+                                          .offlineVideoLink!),
+                                    );
+                                context.read<VideoPlayerBloc>().add(
+                                      VideoIntialize(
+                                        listCurriculum[index].onlineVideoLink!,
                                         listCurriculum[index].offlineVideoLink!,
+                                        index,
                                       ),
                                     );
-                                setState(
-                                  () {
-                                    selectedIndex = index;
-                                  },
-                                );
+                                setState(() {
+                                  isDownload = true;
+                                  selectedIndex = index;
+                                });
                               }
                             },
-                            isDownloaded: isDownloaded,
+                            onTapDelete: () {
+                              context.read<VideoPlayerBloc>().add(
+                                    DeleteVideo(
+                                      listCurriculum[index].onlineVideoLink!,
+                                      listCurriculum[index].offlineVideoLink!,
+                                    ),
+                                  );
+                              context.read<VideoPlayerBloc>().add(
+                                    VideoIntialize(
+                                      listCurriculum[index].onlineVideoLink!,
+                                      listCurriculum[index].offlineVideoLink!,
+                                      index,
+                                    ),
+                                  );
+                              setState(() {
+                                isDownload = false;
+                                selectedIndex = index;
+                              });
+                            },
+                            isDownload: isDownload,
                             offlineDownloadLink:
                                 listCurriculum[index].offlineVideoLink,
                           ),

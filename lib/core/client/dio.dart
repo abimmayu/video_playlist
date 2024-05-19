@@ -25,6 +25,7 @@ Future<Response> downloadIt(
     options: Options(
       responseType: ResponseType.bytes,
     ),
+    onReceiveProgress: (count, total) {},
   );
   Logger().d(response.data);
   return response;

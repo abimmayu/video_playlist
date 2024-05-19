@@ -9,20 +9,13 @@ class VideoUninitialized extends VideoPlayerState {}
 
 class VideoInitializedState extends VideoPlayerState {
   final VideoPlayerController controller;
-
-  VideoInitializedState(this.controller);
-
-  @override
-  List<Object> get props => [controller];
-}
-
-class VideoSelection extends VideoPlayerState {
+  final bool isPlayed;
   final int index;
 
-  VideoSelection(this.index);
+  VideoInitializedState(this.controller, this.isPlayed, this.index);
 
   @override
-  List<Object> get props => [index];
+  List<Object> get props => [controller, isPlayed, index];
 }
 
 class VideoDownloading extends VideoPlayerState {
@@ -45,15 +38,12 @@ class VideoDownloadError extends VideoPlayerState {
 
 class VideoDownloaded extends VideoPlayerState {
   final String filePath;
-  final VideoPlayerController videoPlayerController;
+  final bool isExist;
 
-  VideoDownloaded(this.filePath, this.videoPlayerController);
+  VideoDownloaded(this.filePath, this.isExist);
 
   @override
-  List<Object> get props => [
-        filePath,
-        videoPlayerController,
-      ];
+  List<Object> get props => [filePath];
 }
 
 class VideoNotDownloaded extends VideoPlayerState {}

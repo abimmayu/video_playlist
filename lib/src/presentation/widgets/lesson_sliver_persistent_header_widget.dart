@@ -13,23 +13,21 @@ class LessonHeader extends SliverPersistentHeaderDelegate {
       alignment: Alignment.centerLeft,
       child: const DefaultTabController(
         length: 3,
-        child: Expanded(
-          child: TabBar(
-            indicatorSize: TabBarIndicatorSize.tab,
-            tabs: [
-              Tab(
-                text: "Kurikulum",
-              ),
-              Tab(
-                text: "Ikhtisar",
-              ),
-              Tab(text: "Lampiran"),
-            ],
-            unselectedLabelStyle: TextStyle(
-              color: Colors.grey,
-              fontSize: 16.0,
-              fontWeight: FontWeight.normal,
+        child: TabBar(
+          indicatorSize: TabBarIndicatorSize.tab,
+          tabs: [
+            Tab(
+              text: "Kurikulum",
             ),
+            Tab(
+              text: "Ikhtisar",
+            ),
+            Tab(text: "Lampiran"),
+          ],
+          unselectedLabelStyle: TextStyle(
+            color: Colors.grey,
+            fontSize: 16.0,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),

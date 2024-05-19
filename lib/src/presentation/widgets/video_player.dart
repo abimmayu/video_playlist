@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_play/src/presentation/bloc/video_player_bloc/video_player_bloc.dart';
@@ -53,46 +55,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             () {
               togglePlayPause();
             },
+            state.isPlayed,
           );
         } else if (state is VideoUninitialized) {
           return const Center(
             child: CircularProgressIndicator(),
           );
-        } else if (state is VideoDownloaded) {
-          void startControlTimer() {
-            Future.delayed(
-              const Duration(seconds: 2),
-              () {
-                if (state.videoPlayerController.value.isPlaying) {
-                  setState(
-                    () {
-                      context.read<VideoPlayerBloc>().showControls = false;
-                    },
-                  );
-                }
-              },
-            );
-          }
-
-          void togglePlayPause() {
-            setState(
-              () {
-                if (state.videoPlayerController.value.isPlaying) {
-                  state.videoPlayerController.pause();
-                  context.read<VideoPlayerBloc>().showControls = true;
-                } else {
-                  state.videoPlayerController.play();
-                  startControlTimer();
-                }
-              },
-            );
-          }
-
-          return mediaPlayer(
-            state.videoPlayerController,
-            () {
-              togglePlayPause();
-            },
+        } else if (state is VideoDownloadError) {
+          return Center(
+            child: Text(state.error),
           );
         } else {
           return const AspectRatio(
@@ -110,6 +81,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   Widget mediaPlayer(
     VideoPlayerController controller,
     void Function() togglePlayPause,
+    bool isPlayed,
   ) {
     return AspectRatio(
       aspectRatio: 1.77777777777,

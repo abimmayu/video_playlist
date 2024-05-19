@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:video_play/core/error/failure.dart';
@@ -42,6 +44,20 @@ class LessonRepositoriesImpl implements LessonRepositories {
     try {
       final isDownloaded = await VideoDownloadUtil.isVideoDownloaded(url);
       return Right(isDownloaded);
+    } catch (e) {
+      return Left(
+        LessonFailure(
+          message: e.toString(),
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, FileSystemEntity>> deleteVideo(String url) async {
+    try {
+      final deleteFile = await VideoDownloadUtil.deleteVideo(url);
+      return Right(deleteFile);
     } catch (e) {
       return Left(
         LessonFailure(

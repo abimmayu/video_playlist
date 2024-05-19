@@ -1,8 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:video_play/core/utils/constant.dart';
+import 'package:video_play/core/utils/video_download.dart';
+import 'package:video_play/src/domain/usecases/check_download_status.dart';
+import 'package:video_play/src/domain/usecases/duration_on_minutes_usecase.dart';
 import 'package:video_play/src/presentation/bloc/video_player_bloc/video_player_bloc.dart';
 
 class ListUnitWidget extends StatefulWidget {
@@ -12,8 +18,9 @@ class ListUnitWidget extends StatefulWidget {
     required this.duration,
     required this.onTap,
     required this.onTapDownload,
-    required this.isDownloaded,
+    required this.onTapDelete,
     required this.isSelected,
+    required this.isDownload,
     this.offlineDownloadLink,
   });
 
@@ -21,8 +28,9 @@ class ListUnitWidget extends StatefulWidget {
   final int duration;
   final Function() onTap;
   final Function() onTapDownload;
-  final bool isDownloaded;
+  final Function() onTapDelete;
   final bool isSelected;
+  final bool isDownload;
   String? offlineDownloadLink;
 
   @override
@@ -35,16 +43,41 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
     super.initState();
   }
 
+  checkDownloadStatus(String url) async {
+    final internalPath = await getApplicationDocumentsDirectory();
+    final fileName = url.split('/').last;
+    final filePath = '${internalPath.path}/videos/$fileName';
+
+    final file = File(filePath);
+
+    setState(() {
+      isDownloaded = file.existsSync();
+    });
+  }
+
+  bool isDownloaded = false;
+
   @override
   Widget build(BuildContext context) {
-    int durationOnMinutes = (widget.duration / 60).round();
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: newWidget(durationOnMinutes),
+    if (widget.offlineDownloadLink != null) {
+      checkDownloadStatus(widget.offlineDownloadLink!);
+    }
+    return BlocListener<VideoPlayerBloc, VideoPlayerState>(
+      listener: (context, state) {},
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: newWidget(
+          widget.duration,
+          isDownloaded,
+          widget.offlineDownloadLink,
+        ),
+      ),
     );
   }
 
-  Widget newWidget(int duration) {
+  Widget newWidget(int duration, bool isDownloaded, String? url) {
+    ConvertDurationUseCase newDuration =
+        ConvertDurationUseCase().execute(duration);
     return Container(
       decoration: BoxDecoration(
         color: widget.isSelected ? Colors.lightBlue[50] : Colors.white,
@@ -101,7 +134,11 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
                   },
                 ),
                 Text(
-                  "$duration minutes",
+                  duration >= 86400
+                      ? "${newDuration.day} days ${newDuration.hour} hours ${newDuration.minutes} minutes"
+                      : duration >= 3600 && duration < 86400
+                          ? "${newDuration.hour} hours ${newDuration.minutes} minutes"
+                          : "${newDuration.minutes} minutes",
                   style: AppConstant().thinTextStyle.copyWith(
                         fontSize: 12,
                       ),
@@ -114,7 +151,8 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
           ),
           widget.offlineDownloadLink != null
               ? InkWell(
-                  onTap: widget.onTapDownload,
+                  onTap:
+                      isDownloaded ? widget.onTapDelete : widget.onTapDownload,
                   child: BlocListener<VideoPlayerBloc, VideoPlayerState>(
                     listener: (context, state) {
                       if (state is VideoDownloadSuccess) {}
@@ -123,7 +161,7 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
                       padding: const EdgeInsets.all(10),
                       height: ScreenUtil().setHeight(30),
                       decoration: BoxDecoration(
-                        color: widget.isDownloaded ? Colors.white : Colors.blue,
+                        color: isDownloaded ? Colors.white : Colors.blue,
                         borderRadius: BorderRadius.circular(5),
                         border: Border.all(
                           color: Colors.grey[200]!,
@@ -133,10 +171,8 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            widget.isDownloaded
-                                ? "Tersimpan"
-                                : "Tonton Offline",
-                            style: widget.isDownloaded
+                            isDownloaded ? "Tersimpan" : "Tonton Offline",
+                            style: isDownloaded
                                 ? AppConstant().normalTextStyle.copyWith(
                                       color: Colors.black,
                                       fontSize: 10,
@@ -149,7 +185,7 @@ class _ListUnitWidgetState extends State<ListUnitWidget> {
                           SizedBox(
                             width: ScreenUtil().setWidth(3),
                           ),
-                          widget.isDownloaded
+                          isDownloaded
                               ? Icon(
                                   Icons.check_circle_outline,
                                   color: Colors.blue,
